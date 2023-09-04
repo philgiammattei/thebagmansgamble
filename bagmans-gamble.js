@@ -29,25 +29,25 @@ function resolveInventory() {
     if (userHoops == 3) {
         userHoops = 0;
         userRings++;
-        console.log("You have earned a ring!");
+        console.log("You used 3 hoops to make a ring!");
     }
 
     if (computerHoops == 3) {
         computerHoops = 0;
         computerRings++;
-        console.log("Opponent has earned a ring!");
+        console.log("Opponent used 3 hoops to make a ring!");
     }
 
     if (userRings == 5) {
         userRings = 0;
         userBags++;
-        console.log("You have earned a bag!");
+        console.log("You used 5 rings to make a bag!");
     }
 
     if (computerRings == 5) {
         computerRings = 0;
         computerBags++;
-        console.log("Opponent has earned a bag!")
+        console.log("Opponent used 5 rings to make a bag!")
     }
 }
 
