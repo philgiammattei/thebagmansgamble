@@ -1,3 +1,4 @@
+const { resolve } = require('path');
 const readline = require('readline');
 
 const rl = readline.createInterface({
@@ -5,102 +6,92 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-let userHoops = 0;
-let computerHoops = 0;
-let userRings = 0;
-let computerRings = 0;
-let userBags = 0;
-let computerBags = 0;
+class Player {
+    constructor(isComputer = false) {
+        this.hoops = 0;
+        this.rings = 0;
+        this.bags = 0;
+        this.isComputer = isComputer;
+        this.availableNumbers = [3, 4, 5, 6, 7, 8, 9];
+    }
 
-let total, availableUserNumbers, availableComputerNumbers;
+    logInventory() {
+        console.log(`${this.isComputer ? 'Opponent has' : 'You have'} ${this.rings > 0 ? this.rings + " ring" + (this.rings > 1 ? "s" : "") + " and " : ""}${this.hoops > 0 ? this.hoops + " hoop" + (this.hoops > 1 ? "s" : "") : "no hoops"}.`);
+    }
+
+    resolveInventory() {
+        if (this.hoops == 3) {
+            this.hoops = 0;
+            this.rings++;
+            console.log(`${this.isComputer ? "Opponent" : "You"} used 3 hoops to make a ring!`);
+        }
+
+        if (this.rings == 5) {
+            this.rings = 0;
+            this.bags++;
+            console.log(`${this.isComputer ? "Opponent" : "You"} used 5 rings to make a bag!`);
+        }
+    }
+
+    removeNumber(pick) {
+        this.availableNumbers = this.availableNumbers.filter((num) => num !== pick);
+    }
+
+    hasWon() {
+        if (this.bags === 1) {
+            console.log(`${this.isComputer ? "Opponent has" : "You have"} a bag! ${this.isComputer ? "They" : "You"} are become the Bagman! TITHINGS TO THE BAGMAN.`);
+            return true;
+        }
+        return false;
+    }
+
+    resetAvailableNumbers() {
+        this.availableNumbers = [3, 4, 5, 6, 7, 8, 9];
+    }
+}
+
 let target = 65;
+let total;
+
+const user = new Player();
+const computer = new Player(true);
 
 function processTurn(newTarget) {
-    resolveInventory();
+    bothPlayersDo(player => player.resolveInventory());
+    bothPlayersDo(player => player.resetAvailableNumbers());
 
-    if (doesUserWin() || doesComputerWin()) {
+    if (user.hasWon() || computer.hasWon()) {
         rl.close();
     } else {
         newRound(newTarget);
     }
 }
 
-function resolveInventory() {
-    if (userHoops == 3) {
-        userHoops = 0;
-        userRings++;
-        console.log("You used 3 hoops to make a ring!");
-    }
-
-    if (computerHoops == 3) {
-        computerHoops = 0;
-        computerRings++;
-        console.log("Opponent used 3 hoops to make a ring!");
-    }
-
-    if (userRings == 5) {
-        userRings = 0;
-        userBags++;
-        console.log("You used 5 rings to make a bag!");
-    }
-
-    if (computerRings == 5) {
-        computerRings = 0;
-        computerBags++;
-        console.log("Opponent used 5 rings to make a bag!")
-    }
-}
-
-function logUserInventory() {
-    console.log(`You have ${userRings > 0 ? userRings + " ring" + (userRings > 1 ? "s" : "") + " and " : ""}${userHoops > 0 ? userHoops + " hoop" + (userHoops > 1 ? "s" : "") : "no hoops"}.`);
-}
-
-function logComputerInventory() {
-    console.log(`Opponent has ${computerRings > 0 ? computerRings + " ring" + (computerRings > 1 ? "s" : "") + " and " : ""}${computerHoops > 0 ? computerHoops + " hoop" + (computerHoops > 1 ? "s" : "") : "no hoops"}.`);
+function bothPlayersDo(func) {
+    func(user);
+    func(computer);
 }
 
 function newRound(newTarget) {
     target = newTarget;
-
     total = 0;
-    availableUserNumbers = [3, 4, 5, 6, 7, 8, 9];
-    availableComputerNumbers = [3, 4, 5, 6, 7, 8, 9];
 
-    logUserInventory();
-    logComputerInventory();
+    bothPlayersDo(player => player.logInventory());
     console.log(`A new battle has begun! Your target is ${target}.\n\n`);
     userTurn();
 }
 
-function doesUserWin() {
-    if (userBags === 1) {
-        console.log("You have a bag! You are become the Bagman!  TITHINGS TO THE BAGMAN.");
-        return true;
-    } else {
-        return false;
-    }
-}
-
-function doesComputerWin() {
-    if (computerBags === 1) {
-        console.log("Opponent has a bag! They are become the Bagman!  TITHINGS TO THE BAGMAN.");
-        return true;
-    } else {
-        return false;
-    }
-}
-
 function computerTurn() {
-    const pick = availableComputerNumbers[Math.floor(Math.random() * availableComputerNumbers.length)];
+    const pick = computer.availableNumbers[Math.floor(Math.random() * computer.availableNumbers.length)];
     console.log(`Opponent battles with ${pick}.`);
 
-    availableComputerNumbers = availableComputerNumbers.filter((num) => num !== pick);
+    computer.removeNumber(pick);
     total += pick;
     console.log(`Total: ${total}.\n`);
 
     if (total > target) {
         console.log(`You win a hoop! Opponent pushed the total over ${target} to ${total}.`);
-        userHoops++;
+        user.hoops++;
         processTurn(total - 5);
     } else {
         userTurn();
@@ -108,30 +99,28 @@ function computerTurn() {
 }
 
 function userTurn() {
-    rl.question(`Battle! Available numbers are ${availableUserNumbers.map(number => " " + number)}:  `, (answer) => {
+    rl.question(`Battle! Available numbers are ${user.availableNumbers.map(number => " " + number)}:  `, (answer) => {
         const pick = parseInt(answer, 10);
 
-        if (isNaN(pick) || !availableUserNumbers.includes(pick)) {
-            console.log("YOU HAVE BATTLED WITH AN INCORRECT NUMBER.  BATTLE BETTER.");
+        if (isNaN(pick) || !user.availableNumbers.includes(pick)) {
+            console.log("YOU HAVE BATTLED WITH AN INCORRECT NUMBER. BATTLE BETTER.");
             userTurn();
             return;
         }
 
-        availableUserNumbers = availableUserNumbers.filter((num) => num !== pick);
+        user.removeNumber(pick);
         total += pick;
         console.log(`Total: ${total}.\n`);
 
         if (total > target) {
             console.log(`Opponent wins a hoop! You pushed the total over ${target} to ${total}.`);
-            computerHoops++;
+            computer.hoops++;
             processTurn(total - 5);
         } else {
             computerTurn();
         }
     });
 }
-
-
 
 console.log("THE BAGMAN'S GAMBLE");
 console.log("The goal is to become The Bagman.");
